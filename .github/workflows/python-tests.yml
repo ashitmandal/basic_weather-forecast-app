@@ -1,30 +1,38 @@
-name: Python CI
+
+name: Python CI - Self Hosted Windows
 
 on:
   push:
     branches: ["**"]
+
   pull_request:
     branches: ["**"]
 
+  workflow_dispatch:
+
 jobs:
   test:
+    name: Run Python Tests on Local Runner
     runs-on: self-hosted
-    #runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+      - name: Check Python version
+        run: python --version
+
+      - name: Create CI virtual environment
+        run: python -m venv .venv
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest
+          .venv\Scripts\python.exe -m pip install --upgrade pip
+          .venv\Scripts\python.exe -m pip install -r requirements.txt
+          .venv\Scripts\python.exe -m pip install pytest
 
-      - name: Run tests
-        run: python -m pytest -v -s
+      - name: Display system information
+        run: .venv\Scripts\python.exe -m pytest tests/test_system_info.py -v -s
+
+      - name: Run all tests
+        run: .venv\Scripts\python.exe -m pytest -v -s
