@@ -1,38 +1,58 @@
 
-name: Python CI - Self Hosted Windows
+name: Python Application CI
 
 on:
+  # Run CI whenever code is pushed to ANY branch
   push:
-    branches: ["**"]
+    branches:
+      - '**'
 
+  # Validate PRs targeting main
   pull_request:
-    branches: ["**"]
+    branches:
+      - main
 
+  # Allow manual execution from GitHub
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   test:
-    name: Run Python Tests on Local Runner
-    runs-on: self-hosted
+    name: Pytest - Python 3.11
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Check Python version
-        run: python --version
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
 
-      - name: Create CI virtual environment
+      - name: Verify Python
+        run: |
+          python --version
+          python -m pip --version
+
+      - name: Create virtual environment
         run: python -m venv .venv
 
       - name: Install dependencies
-        run: |
-          .venv\Scripts\python.exe -m pip install --upgrade pip
-          .venv\Scripts\python.exe -m pip install -r requirements.txt
-          .venv\Scripts\python.exe -m pip install pytest
+        run:
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install -r requirements.txt
 
-      - name: Display system information
-        run: .venv\Scripts\python.exe -m pytest tests/test_system_info.py -v -s
+      - name: Run Pytest
+        run: .venv/bin/python -m pytest -v -s --junitxml=test-results.xml
 
-      - name: Run all tests
-        run: .venv\Scripts\python.exe -m pytest -v -s
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results
+          path: test-results.xml
+          if-no-files-found: ignore
